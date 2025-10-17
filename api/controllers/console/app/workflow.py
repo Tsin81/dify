@@ -17,6 +17,7 @@ from controllers.console.app.error import (
     DraftWorkflowNotSync,
 )
 from controllers.console.app.wraps import get_app_model
+from controllers.console.money_extend import money_limit
 from controllers.console.wraps import account_initialization_required, setup_required
 from controllers.web.error import InvokeRateLimitError as InvokeRateLimitHttpError
 from core.app.app_config.features.file_upload.manager import FileUploadConfigManager
@@ -208,6 +209,7 @@ class AdvancedChatDraftRunIterationNodeApi(Resource):
     @setup_required
     @login_required
     @account_initialization_required
+    @money_limit
     @get_app_model(mode=[AppMode.ADVANCED_CHAT])
     def post(self, app_model: App, node_id: str):
         """
@@ -356,6 +358,7 @@ class DraftWorkflowRunApi(Resource):
     @setup_required
     @login_required
     @account_initialization_required
+    @money_limit
     @get_app_model(mode=[AppMode.WORKFLOW])
     def post(self, app_model: App):
         """

@@ -32,6 +32,7 @@ from models.account import (
     TenantPluginAutoUpgradeStrategy,
     TenantStatus,
 )
+from models.account_money_extend import AccountMoneyExtend
 from models.model import DifySetup
 from services.billing_service import BillingService
 from services.errors.account import (
@@ -1153,6 +1154,15 @@ class RegisterService:
                 password=password,
                 is_setup=True,
             )
+
+            # extend begin：初始化用户额度数据
+            account_money_add = AccountMoneyExtend(
+                account_id=account.id,
+                used_quota=0,
+                total_quota=dify_config.ACCOUNT_TOTAL_QUOTA,
+            )
+            db.session.add(account_money_add)
+            # extend end：初始化用户额度数据
 
             account.last_login_ip = ip_address
             account.initialized_at = naive_utc_now()

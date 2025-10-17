@@ -120,6 +120,30 @@ def init_app(app: DifyApp) -> Celery:
             "schedule": crontab(minute="*/15"),
         }
 
+    # ---------------------------- 二开部分 Begin ----------------------------
+    if dify_config.ENABLE_ACCOUNT_QUOTA_EXTEND_TASK:
+        # 每月1号00:00，重置账号额度
+        imports.append("schedule.update_account_used_quota_extend")
+        beat_schedule["update_account_used_quota_extend"] = {
+            "task": "schedule.update_account_used_quota_extend.update_account_used_quota_extend",
+            "schedule": crontab(minute="0", hour="0", day_of_month="1"),
+        }
+
+        # 每天，重置账户日额度
+        imports.append("schedule.update_account_daily_used_quota_extend")
+        beat_schedule["update_account_daily_used_quota_extend"] = {
+            "task": "schedule.update_account_daily_used_quota_extend.update_account_daily_used_quota_extend",
+            "schedule": timedelta(days=1),
+        }
+
+        # 每月1号00:00，重置账户月额度
+        imports.append("schedule.update_account_monthly_used_quota_extend")
+        beat_schedule["update_account_monthly_used_quota_extend"] = {
+            "task": "schedule.update_account_monthly_used_quota_extend.update_account_monthly_used_quota_extend",
+            "schedule": crontab(minute="0", hour="0", day_of_month="1"),
+        }
+   # ---------------------------- 二开部分 End ----------------------------
+
     celery_app.conf.update(beat_schedule=beat_schedule, imports=imports)
 
     return celery_app

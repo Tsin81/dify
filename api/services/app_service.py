@@ -4,6 +4,7 @@ from typing import Optional, TypedDict, cast
 
 from flask_login import current_user
 from flask_sqlalchemy.pagination import Pagination
+from sqlalchemy.sql import text  # Extend: App Center - Recommended list sorted by usage frequency
 
 from configs import dify_config
 from constants.model_template import default_app_templates
@@ -18,7 +19,7 @@ from events.app_event import app_was_created
 from extensions.ext_database import db
 from libs.datetime_utils import naive_utc_now
 from models.account import Account
-from models.model import App, AppMode, AppModelConfig, Site
+from models.model import App, AppMode, AppModelConfig, Site, AppStatisticsExtend # Extend: App Center - Recommended list sorted by usage frequency
 from models.tools import ApiToolProvider
 from services.enterprise.enterprise_service import EnterpriseService
 from services.feature_service import FeatureService
@@ -36,6 +37,15 @@ class AppService:
         :return:
         """
         filters = [App.tenant_id == tenant_id, App.is_universal == False]
+
+        # start Extend: App Center - Recommended list sorted by usage frequency
+        rows = db.session.execute(
+            text('SELECT "id" FROM apps WHERE "id" NOT IN (SELECT"app_id" FROM "app_statistics_extend")')
+        )
+        for row in rows.fetchall():
+            db.session.add(AppStatisticsExtend(app_id=str(row[0]), number=0))
+            db.session.commit()
+        # stop Extend: App Center - Recommended list sorted by usage frequency
 
         if args["mode"] == "workflow":
             filters.append(App.mode == AppMode.WORKFLOW.value)
@@ -67,6 +77,14 @@ class AppService:
             per_page=args["limit"],
             error_out=False,
         )
+
+        # ---------------- start app list
+        # get recommended app list
+        app_list = []
+        for i in db.session.query(RecommendedApp).all():
+            app_list.append(i.app_id)
+        app_models.recommended_apps = app_list
+        # ---------------- stop app list
 
         return app_models
 
@@ -152,6 +170,9 @@ class AppService:
 
             app.app_model_config_id = app_model_config.id
 
+        db.session.add(AppStatisticsExtend(app_id=app.id, number=0))  # Extend: App Center - Recommended list sorted
+        # by usage frequency
+
         db.session.commit()
 
         app_was_created.send(app, account=account)
@@ -166,6 +187,11 @@ class AppService:
         """
         Get App
         """
+        # ======= start: Extend: App Center - Recommended list sorted =======
+        if db.session.query(AppStatisticsExtend).filter(AppStatisticsExtend.app_id == app.id).first() is None:
+            db.session.add(AppStatisticsExtend(app_id=app.id, number=0))
+            db.session.commit()
+        # ======= stop: Extend: App Center - Recommended list sorted =======
         # get original app model config
         if app.mode == AppMode.AGENT_CHAT.value or app.is_agent:
             model_config = app.app_model_config
@@ -246,6 +272,12 @@ class AppService:
         app.max_active_requests = args.get("max_active_requests")
         app.updated_by = current_user.id
         app.updated_at = naive_utc_now()
+
+        # ======= start: Extend: App Center - Recommended list sorted =======
+        if db.session.query(AppStatisticsExtend).filter(AppStatisticsExtend.app_id == app.id).first() is None:
+            db.session.add(AppStatisticsExtend(app_id=app.id, number=0))
+            db.session.commit()
+        # ======= stop: Extend: App Center - Recommended list sorted =======
         db.session.commit()
 
         return app

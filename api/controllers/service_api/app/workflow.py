@@ -31,7 +31,7 @@ from extensions.ext_database import db
 from fields.workflow_app_log_fields import workflow_app_log_pagination_fields
 from libs import helper
 from libs.helper import TimestampField
-from models.model import App, AppMode, EndUser
+from models.model import ApiToken, App, AppMode, EndUser  # 二开部分End - 密钥额度限制，ApiToken
 from repositories.factory import DifyAPIRepositoryFactory
 from services.app_generate_service import AppGenerateService
 from services.errors.app import IsDraftWorkflowError, WorkflowIdFormatError, WorkflowNotFoundError
@@ -58,7 +58,7 @@ workflow_run_fields = {
 class WorkflowRunDetailApi(Resource):
     @validate_app_token
     @marshal_with(workflow_run_fields)
-    def get(self, app_model: App, workflow_run_id: str):
+    def get(self, app_model: App, workflow_run_id: str, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """
         Get a workflow task running detail
         """
@@ -80,7 +80,7 @@ class WorkflowRunDetailApi(Resource):
 
 class WorkflowRunApi(Resource):
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.JSON, required=True))
-    def post(self, app_model: App, end_user: EndUser):
+    def post(self, app_model: App, end_user: EndUser, api_token: ApiToken):  # 二开部分End - 密钥额度限制，api_token
         """
         Run workflow
         """
@@ -143,6 +143,11 @@ class WorkflowRunByIdApi(Resource):
         external_trace_id = get_external_trace_id(request)
         if external_trace_id:
             args["external_trace_id"] = external_trace_id
+
+        # ------------------- 二开部分Begin - 密钥额度限制 -------------------
+        args["api_token"] = api_token
+        # # ------------------- 二开部分End - 密钥额度限制 -------------------
+
         streaming = args.get("response_mode") == "streaming"
 
         try:
@@ -176,7 +181,7 @@ class WorkflowRunByIdApi(Resource):
 
 class WorkflowTaskStopApi(Resource):
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.JSON, required=True))
-    def post(self, app_model: App, end_user: EndUser, task_id: str):
+    def post(self, app_model: App, end_user: EndUser, task_id: str, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """
         Stop workflow task
         """
@@ -192,7 +197,7 @@ class WorkflowTaskStopApi(Resource):
 class WorkflowAppLogApi(Resource):
     @validate_app_token
     @marshal_with(workflow_app_log_pagination_fields)
-    def get(self, app_model: App):
+    def get(self, app_model: App, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """
         Get workflow app logs
         """

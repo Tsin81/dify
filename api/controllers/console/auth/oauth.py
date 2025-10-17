@@ -14,15 +14,18 @@ from events.tenant_event import tenant_was_created
 from extensions.ext_database import db
 from libs.datetime_utils import naive_utc_now
 from libs.helper import extract_remote_ip
-from libs.oauth import GitHubOAuth, GoogleOAuth, OAuthUserInfo
+from libs.oauth import GitHubOAuth, GoogleOAuth, OaOAuth, OAuthUserInfo
 from models import Account
 from models.account import AccountStatus
 from services.account_service import AccountService, RegisterService, TenantService
+from services.account_service_extend import TenantExtendService
 from services.errors.account import AccountNotFoundError, AccountRegisterError
 from services.errors.workspace import WorkSpaceNotAllowedCreateError, WorkSpaceNotFoundError
 from services.feature_service import FeatureService
 
 from .. import api
+
+logger = logging.getLogger(__name__)
 
 
 def get_oauth_providers():
@@ -44,7 +47,9 @@ def get_oauth_providers():
                 redirect_uri=dify_config.CONSOLE_API_URL + "/console/api/oauth/authorize/google",
             )
 
-        OAUTH_PROVIDERS = {"github": github_oauth, "google": google_oauth}
+        oauth2 = OaOAuth(client_id='', client_secret='', redirect_uri='') # Extend: oauth2
+
+        OAUTH_PROVIDERS = {"github": github_oauth, "google": google_oauth, "oauth2": oauth2}
         return OAUTH_PROVIDERS
 
 
@@ -71,12 +76,27 @@ class OAuthCallback(Resource):
 
         code = request.args.get("code")
         state = request.args.get("state")
+        # Fallback: some providers may return tokens directly in query (implicit/hybrid flow)
+        token_from_query: Optional[str] = None
+        if not code:
+            token_from_query = request.args.get("access_token")
+            if token_from_query:
+                logger.warning(
+                    "oauth.callback_no_code_but_token",
+                    extra={
+                        "provider": provider,
+                        "full_url": request.url,
+                        "note": "Using access_token from query as fallback. Prefer Authorization Code flow.",
+                    },
+                )
+            else:
+                return {"error": "Missing authorization code"}, 400
         invite_token = None
         if state:
             invite_token = state
 
         try:
-            token = oauth_provider.get_access_token(code)
+            token = token_from_query or oauth_provider.get_access_token(code)  # type: ignore[arg-type]
             user_info = oauth_provider.get_user_info(token)
         except requests.exceptions.RequestException as e:
             error_text = e.response.text if e.response else str(e)

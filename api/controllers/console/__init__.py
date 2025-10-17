@@ -51,15 +51,18 @@ from .app import (
     agent,
     annotation,
     app,
+    app_extend, # 二开部分：新增同步应用到模版中心
     audio,
     completion,
     conversation,
     conversation_variables,
+    ding_talk_extend,  # 二开部分: 钉钉相关 API
     generator,
     mcp_server,
     message,
     model_config,
     ops_trace,
+    passport_extend,  # 二开部分: 新增passport_extend(额度限制，应用web计费)
     site,
     statistic,
     workflow,
@@ -70,7 +73,7 @@ from .app import (
 )
 
 # Import auth controllers
-from .auth import activate, data_source_bearer_auth, data_source_oauth, forgot_password, login, oauth
+from .auth import activate, data_source_bearer_auth, data_source_oauth, forgot_password, login, oauth, register_extend # 二开部分: 新增用户（调用dify注册接口）
 
 # Import billing controllers
 from .billing import billing, compliance
@@ -171,8 +174,10 @@ api.add_resource(
 from .tag import tags
 
 # Import workspace controllers
+# 二开部分：新增account_extend
 from .workspace import (
     account,
+    account_extend,
     agent_providers,
     endpoint,
     load_balancing_config,

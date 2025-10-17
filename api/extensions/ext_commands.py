@@ -8,6 +8,7 @@ def init_app(app: DifyApp):
         clear_orphaned_file_records,
         convert_to_agent_apps,
         create_tenant,
+        extend_db,
         extract_plugins,
         extract_unique_plugins,
         fix_app_site_missing,
@@ -42,6 +43,7 @@ def init_app(app: DifyApp):
         clear_orphaned_file_records,
         remove_orphaned_files_on_storage,
         setup_system_tool_oauth_client,
+        extend_db,
     ]
     for cmd in cmds_to_register:
         app.cli.add_command(cmd)
