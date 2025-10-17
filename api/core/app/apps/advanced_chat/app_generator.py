@@ -3,7 +3,7 @@ import logging
 import threading
 import uuid
 from collections.abc import Generator, Mapping
-from typing import Any, Literal, Optional, Union, overload
+from typing import Any, Literal, Optional, Union, overload, cast  # 二开部分 - 密钥额度限制，新增cast
 
 from flask import Flask, current_app
 from pydantic import ValidationError
@@ -22,7 +22,10 @@ from core.app.apps.base_app_queue_manager import AppQueueManager, PublishFrom
 from core.app.apps.exc import GenerateTaskStoppedError
 from core.app.apps.message_based_app_generator import MessageBasedAppGenerator
 from core.app.apps.message_based_app_queue_manager import MessageBasedAppQueueManager
-from core.app.entities.app_invoke_entities import AdvancedChatAppGenerateEntity, InvokeFrom
+from core.app.entities.app_invoke_entities import (
+    AdvancedChatAppGenerateEntity,
+    InvokeFrom,
+)
 from core.app.entities.task_entities import ChatbotAppBlockingResponse, ChatbotAppStreamResponse
 from core.helper.trace_id_helper import extract_external_trace_id_from_args
 from core.model_runtime.errors.invoke import InvokeAuthorizationError
@@ -38,7 +41,7 @@ from core.workflow.variable_loader import DUMMY_VARIABLE_LOADER, VariableLoader
 from extensions.ext_database import db
 from factories import file_factory
 from libs.flask_utils import preserve_flask_contexts
-from models import Account, App, Conversation, EndUser, Message, Workflow, WorkflowNodeExecutionTriggeredFrom
+from models import ApiToken, Account, App, Conversation, EndUser, Message, Workflow, WorkflowNodeExecutionTriggeredFrom # 二开部分 - 密钥额度限制，新增ApiToken
 from models.enums import WorkflowRunTriggeredFrom
 from services.conversation_service import ConversationService
 from services.workflow_draft_variable_service import (
@@ -118,6 +121,13 @@ class AdvancedChatAppGenerator(MessageBasedAppGenerator):
             "auto_generate_conversation_name": args.get("auto_generate_name", False),
             **extract_external_trace_id_from_args(args),
         }
+
+        # ------------------- 二开部分Begin - 密钥额度限制 -------------------
+        api_token = args.get("api_token")
+        if api_token:
+            cast(ApiToken, api_token)
+            extras["app_token_id"] = api_token.id
+        # ------------------- 二开部分End - 密钥额度限制 -------------------
 
         # get conversation
         conversation = None

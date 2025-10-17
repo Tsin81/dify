@@ -12,6 +12,7 @@ from core.workflow.entities.node_entities import NodeRunResult
 from core.workflow.entities.workflow_node_execution import WorkflowNodeExecutionStatus
 from core.workflow.nodes.base import BaseNode
 from core.workflow.nodes.base.entities import BaseNodeData, RetryConfig
+from core.workflow.nodes.code.control_extend import ExecutionControl  # Extend: Adding execution control logic
 from core.workflow.nodes.code.entities import CodeNodeData
 from core.workflow.nodes.enums import ErrorStrategy, NodeType
 
@@ -84,10 +85,14 @@ class CodeNode(BaseNode):
                 variables[variable_name] = variable.to_object() if variable else None
         # Run code
         try:
+            # Extend: Start Adding execution control logic
+            purview = ExecutionControl().check_code(tenant_id=self.tenant_id)
+            # Extend: Stop Adding execution control logic
             result = CodeExecutor.execute_workflow_code_template(
                 language=code_language,
                 code=code,
                 inputs=variables,
+                purview=purview,  # Adding execution control logic
             )
 
             # Transform result

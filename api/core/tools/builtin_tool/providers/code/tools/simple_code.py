@@ -27,7 +27,7 @@ class SimpleCode(BuiltinTool):
             raise ValueError(f"Only python3 and javascript are supported, not {language}")
 
         try:
-            result = CodeExecutor.execute_code(language, "", code)
+            result = CodeExecutor.execute_code(False, language, "", code)
             yield self.create_text_message(result)
         except Exception as e:
             raise ToolInvokeError(str(e))

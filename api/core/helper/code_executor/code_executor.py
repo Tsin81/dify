@@ -16,6 +16,7 @@ from core.helper.code_executor.template_transformer import TemplateTransformer
 
 logger = logging.getLogger(__name__)
 code_execution_endpoint_url = URL(str(dify_config.CODE_EXECUTION_ENDPOINT))
+full_code_execution_endpoint_url = URL(str(dify_config.FULL_CODE_EXECUTION_ENDPOINT))
 
 
 class CodeExecutionError(Exception):
@@ -57,15 +58,19 @@ class CodeExecutor:
     supported_dependencies_languages: set[CodeLanguage] = {CodeLanguage.PYTHON3}
 
     @classmethod
-    def execute_code(cls, language: CodeLanguage, preload: str, code: str) -> str:
+    def execute_code(cls, purview: bool, language: CodeLanguage, preload: str, code: str) -> str:
         """
         Execute code
+        :param purview: bool # Extend global code
         :param language: code language
         :param preload: the preload script
         :param code: code
         :return:
         """
         url = code_execution_endpoint_url / "v1" / "sandbox" / "run"
+        # # Extend global code
+        if purview:
+            url = full_code_execution_endpoint_url / "v1" / "sandbox" / "run"
 
         headers = {"X-Api-Key": dify_config.CODE_EXECUTION_API_KEY}
 
@@ -120,12 +125,13 @@ class CodeExecutor:
         return response_code.data.stdout or ""
 
     @classmethod
-    def execute_workflow_code_template(cls, language: CodeLanguage, code: str, inputs: Mapping[str, Any]):
+    def execute_workflow_code_template(cls, language: CodeLanguage, code: str, inputs: Mapping[str, Any], purview: bool = False):  # Extend global code
         """
         Execute code
         :param language: code language
         :param code: code
         :param inputs: inputs
+        :param purview: bool = False
         :return:
         """
         template_transformer = cls.code_template_transformers.get(language)
@@ -135,7 +141,7 @@ class CodeExecutor:
         runner, preload = template_transformer.transform_caller(code, inputs)
 
         try:
-            response = cls.execute_code(language, preload, runner)
+            response = cls.execute_code(purview, language, preload, runner)
         except CodeExecutionError as e:
             raise e
 
