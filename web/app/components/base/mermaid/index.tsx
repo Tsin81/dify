@@ -4,6 +4,8 @@ import { usePrevious } from 'ahooks'
 import { useTranslation } from 'react-i18next'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { cleanUpSvgCode } from './utils'
+import type { Property } from 'csstype' // Markdown embedded images support click-to-zoom, providing users with a better user experience
+import s from './modal.module.css' // Markdown embedded images support click-to-zoom, providing users with a better user experience
 import LoadingAnim from '@/app/components/base/chat/chat/loading-anim'
 import cn from '@/utils/classnames'
 import ImagePreview from '@/app/components/base/image-uploader/image-preview'
@@ -25,6 +27,7 @@ const svgToBase64 = (svgGraph: string) => {
   })
 }
 
+// eslint-disable-next-line react/display-name
 const Flowchart = (
   {
     ref,
@@ -44,6 +47,11 @@ const Flowchart = (
   const timeRef = useRef<number>(0)
   const [errMsg, setErrMsg] = useState('')
   const [imagePreviewUrl, setImagePreviewUrl] = useState('')
+  // Extend: Start Markdown embedded images support click-to-zoom, providing users with a better user experience
+  const [showModal, setShowModal] = useState(false)
+  const [imgStyle, setImgStyle] = useState({ width: '0px', height: '0px' })
+  const [imgBarStyle, setImgBarStyle] = useState({ width: '0px', height: '0px', overflowY: 'auto' as Property.OverflowY })
+  // Extend: Stop Markdown embedded images support click-to-zoom, providing users with a better user experience
 
   const renderFlowchart = useCallback(async (PrimitiveCode: string) => {
     setSvgCode(null)
@@ -64,6 +72,34 @@ const Flowchart = (
       }
     }
   }, [props.PrimitiveCode])
+
+  // Extend: Start Markdown embedded images support click-to-zoom, providing users with a better user experience
+  const openImage = async () => {
+    if (!window)
+      return
+    const img = new Image()
+    let winWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth
+    let winHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
+    img.onload = () => {
+      setShowModal(true)
+      winWidth = winWidth * 0.9
+      winHeight = winHeight * 0.9
+      winWidth = winWidth > 1920 ? 1920 : winWidth
+      const multiple = winWidth / img.width
+      const imgHeight = img.height * multiple
+      if (imgHeight < winHeight)
+        winHeight = imgHeight
+      setImgBarStyle({ width: `${winWidth}px`, height: `${winHeight}px`, overflowY: 'auto' })
+      setImgStyle({ width: `${img.width * multiple}px`, height: `${imgHeight}px` })
+    }
+    if (svgCode)
+      img.src = svgCode
+  }
+  // clone
+  const closeImage = () => {
+    setShowModal(false)
+  }
+  // Extend: Stop Markdown embedded images support click-to-zoom, providing users with a better user experience
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -121,7 +157,7 @@ const Flowchart = (
       {
         svgCode
         && <div className="mermaid object-fit: cover h-auto w-full cursor-pointer" onClick={() => setImagePreviewUrl(svgCode)}>
-          {svgCode && <img src={svgCode} alt="mermaid_chart" />}
+          {svgCode && <img onClick={openImage} src={svgCode} alt="mermaid_chart" />}
         </div>
       }
       {isLoading
@@ -140,6 +176,23 @@ const Flowchart = (
       {
         imagePreviewUrl && (<ImagePreview title='mermaid_chart' url={imagePreviewUrl} onCancel={() => setImagePreviewUrl('')} />)
       }
+      {/* Extend: Start Markdown embedded images support click-to-zoom, providing users with a better user experience */}
+      {
+        (showModal && imgStyle && svgCode) && <div onClick={closeImage}>
+          <div className={cn(s.mask_body)}>
+            <div className={cn(s.mask_layer)}></div>
+            <div className={cn(s.mask_dialog)} style={imgBarStyle}>
+              <img
+                alt="result image preview"
+                src={svgCode}
+                style={imgStyle}
+                className={cn('h-full', 'w-full', 'object-contain', s.mask_layer)}
+              />
+            </div>
+          </div>
+        </div>
+      }
+      {/* Extend: Stop Markdown embedded images support click-to-zoom, providing users with a better user experience */}
     </div>)
   )
 }

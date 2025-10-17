@@ -143,6 +143,8 @@ export default function AccountSetting({
 
   const [searchValue, setSearchValue] = useState<string>('')
 
+  const { isCurrentWorkspaceManager } = useAppContext() // 二开部分 - 空间普通成员不渲染“模型供应商”标签
+
   return (
     <MenuDialog
       show
@@ -160,7 +162,16 @@ export default function AccountSetting({
                   )}
                   <div>
                     {
-                      menuItem.items.map(item => (
+                      /**
+                       * 二开部分 - 空间普通成员不渲染“模型供应商”标签
+                       * 改动
+                       * 原：menuItem.items.map(item => (
+                       * 改：menuItem.items.filter(item => !(item.key === 'provider' && !isCurrentWorkspaceManager)).map(item =>
+                       * 转发计费
+                       * 改：menuItem.items.filter(item => (!(item.key === 'provider' && !isCurrentWorkspaceManager) && item.key !== 'billing-list')).map(item => (
+                        */
+                      menuItem.items.filter(item => (!(
+                        item.key === 'provider' && !isCurrentWorkspaceManager) && item.key !== 'billing-list')).map(item => (
                         <div
                           key={item.key}
                           className={cn(
