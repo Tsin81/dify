@@ -64,6 +64,7 @@ export type IOnLoopFinished = (workflowFinished: LoopFinishedResponse) => void
 export type IOnAgentLog = (agentLog: AgentLogResponse) => void
 
 export type IOtherOptions = {
+  isAdminAPI?: boolean // extend: admin
   isPublicAPI?: boolean
   isMarketplaceAPI?: boolean
   bodyStringify?: boolean
@@ -366,15 +367,21 @@ export const ssePost = async (
   } = otherOptions
   const abortController = new AbortController()
 
-  const token = localStorage.getItem('console_token')
+  const console_token = localStorage.getItem('console_token')
 
   const options = Object.assign({}, baseOptions, {
     method: 'POST',
     signal: abortController.signal,
     headers: new Headers({
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${console_token}`,
     }),
   } as RequestInit, fetchOptions)
+
+  // ----------------- start You must log in to access your account extend ---------------
+  const token = localStorage.getItem('console_token') || ''
+  if ((url === 'chat-messages' || url === 'completion-messages' || url === 'workflows/run') && token.length > 0)
+    options.headers.set('Authorization-extend', `${token}`)
+  // ----------------- stop You must log in to access your account extend ---------------
 
   const contentType = (options.headers as Headers).get('Content-Type')
   if (!contentType)

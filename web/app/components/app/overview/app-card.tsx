@@ -288,7 +288,7 @@ function AppCard({
           </div>}
         </div>
         <div className={'flex items-center gap-1 self-stretch p-3'}>
-          {!isApp && <SecretKeyButton appId={appInfo.id} />}
+          {!isApp && isCurrentWorkspaceManager && <SecretKeyButton appId={appInfo.id} />} {/* 二开部分 - 非管理员隐藏 API密钥按钮 */}
           {OPERATIONS_MAP[cardType].map((op) => {
             const disabled
               = op.opName === t('appOverview.overview.appInfo.settings.entry')

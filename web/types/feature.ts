@@ -59,6 +59,11 @@ export type SystemFeatures = {
     allow_email_code_login: boolean
     allow_email_password_login: boolean
   }
+  is_custom_auth2: string // extend: Customizing AUTH2
+  is_custom_auth2_logout: string // extend: AUTH2 logout url
+  ding_talk_client_id: string // Extend: DingTalk third-party login
+  ding_talk_corp_id: string // Extend: DingTalk sidebar login
+  ding_talk: boolean // Extend: switch DingTalk sidebar login
 }
 
 export const defaultSystemFeatures: SystemFeatures = {
@@ -98,11 +103,16 @@ export const defaultSystemFeatures: SystemFeatures = {
     allow_email_code_login: false,
     allow_email_password_login: false,
   },
+  is_custom_auth2: '', // extend: Customizing AUTH2
+  ding_talk_client_id: '', // Extend: DingTalk third-party login
+  ding_talk_corp_id: '', // Extend: DingTalk sidebar login
+  ding_talk: false, // Extend: switch DingTalk sidebar login
 }
 
 export enum DatasetAttr {
   DATA_API_PREFIX = 'data-api-prefix',
   DATA_PUBLIC_API_PREFIX = 'data-public-api-prefix',
+  DATA_ADMIN_API_PREFIX = 'data-admin-api-prefix',
   DATA_MARKETPLACE_API_PREFIX = 'data-marketplace-api-prefix',
   DATA_MARKETPLACE_URL_PREFIX = 'data-marketplace-url-prefix',
   DATA_PUBLIC_EDITION = 'data-public-edition',

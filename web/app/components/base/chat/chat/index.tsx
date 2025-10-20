@@ -12,6 +12,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { debounce } from 'lodash-es'
 import { useShallow } from 'zustand/react/shallow'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type {
   ChatConfig,
   ChatItem,
@@ -211,6 +212,20 @@ const Chat: FC<ChatProps> = ({
   }, [handleWindowResize, sidebarCollapseState])
 
   const hasTryToAsk = config?.suggested_questions_after_answer?.enabled && !!suggestedQuestions?.length && onSend
+
+  // ------------------------ start You must log in to access your account extend ------------------------
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const consoleToken = searchParams.get('console_token')
+  const consoleTokenFromLocalStorage = localStorage?.getItem('console_token')
+
+  if (!(consoleToken || consoleTokenFromLocalStorage)) {
+    if (window.location !== undefined)
+      localStorage?.setItem('redirect_url', window.location.href)
+    router.replace('/signin')
+    return null
+  }
+  // ------------------------ end You must log in to access your account extend ------------------------
 
   return (
     <ChatContextProvider

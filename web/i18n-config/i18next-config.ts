@@ -43,6 +43,7 @@ const NAMESPACES = [
   'time',
   'tools',
   'workflow',
+  'extend'// 二开部分：新增的多语言
 ]
 
 export const loadLangResources = async (lang: string) => {

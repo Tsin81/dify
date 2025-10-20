@@ -212,6 +212,9 @@ plugins.jsonl
 # mise
 mise.toml
 
+# 二开新增
+docker/volumes/admin-server/*
+
 # Next.js build output
 .next/
 

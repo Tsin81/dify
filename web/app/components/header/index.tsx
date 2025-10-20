@@ -8,6 +8,7 @@ import EnvNav from './env-nav'
 import PluginsNav from './plugins-nav'
 import ExploreNav from './explore-nav'
 import ToolsNav from './tools-nav'
+import AccountMoneyExtend from './account-money-extend' // 二开部分 - 额度限制
 import { WorkspaceProvider } from '@/context/workspace-context'
 import { useAppContext } from '@/context/app-context'
 import DifyLogo from '@/app/components/base/logo/dify-logo'
@@ -46,7 +47,7 @@ const Header = () => {
       <div className=''>
         <div className='flex items-center justify-between px-2'>
           <div className='flex items-center'>
-            <Link href="/apps" className='flex h-8 shrink-0 items-center justify-center px-0.5'>
+            <Link href="/explore/apps-center-extend" className='flex h-8 shrink-0 items-center justify-center px-0.5'>
               {systemFeatures.branding.enabled && systemFeatures.branding.workspace_logo
                 ? <img
                   src={systemFeatures.branding.workspace_logo}
@@ -67,6 +68,7 @@ const Header = () => {
             </div>
             <AccountDropdown />
           </div>
+          <AccountMoneyExtend />{/*  // 二开部分 - 额度限制 */}
         </div>
         <div className='my-1 flex items-center justify-center space-x-1'>
           {!isCurrentWorkspaceDatasetOperator && <ExploreNav className={navClassName} />}
@@ -95,6 +97,7 @@ const Header = () => {
           <WorkplaceSelector />
         </WorkspaceProvider>
         {enableBilling ? <PlanBadge allowHover sandboxAsUpgrade plan={plan.type} onClick={handlePlanClick} /> : <LicenseNav />}
+        <AccountMoneyExtend />{/*  // 二开部分 - 额度限制 */}
       </div>
       <div className='flex items-center space-x-2'>
         {!isCurrentWorkspaceDatasetOperator && <ExploreNav className={navClassName} />}

@@ -317,7 +317,7 @@ export const fetchSupportRetrievalMethods: Fetcher<RetrievalMethodsRes, string> 
 }
 
 export const getSystemFeatures = () => {
-  return get<SystemFeatures>('/system-features')
+  return get<SystemFeatures>(`/system-features?time=${(Math.round(new Date() / 1000)).toString()}`)
 }
 
 export const enableModel = (url: string, body: { model: string; model_type: ModelTypeEnum }) =>

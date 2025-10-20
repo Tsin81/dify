@@ -10,12 +10,28 @@ import SocialAuth from './components/social-auth'
 import SSOAuth from './components/sso-auth'
 import cn from '@/utils/classnames'
 import { invitationCheck } from '@/service/common'
-import { LicenseStatus } from '@/types/feature'
+import { LicenseStatus, type SystemFeatures } from '@/types/feature' // extend：加上 type SystemFeatures
 import Toast from '@/app/components/base/toast'
-import { IS_CE_EDITION } from '@/config'
+import { IS_CE_EDITION, API_PREFIX } from '@/config'
 import { useGlobalPublicStore } from '@/context/global-public-context'
 import { resolvePostLoginRedirect } from './utils/post-login-redirect'
+// extend : support ding_talk login
+import DingTalkAuth from '@/app/signin/components/dingtalk-auth'
+import OAuth2 from '@/app/signin/components/oauth2' // extend: add oauth2
 
+// 声明一个变量来存储钉钉SDK
+let dd: any = null
+
+// 客户端环境中初始化钉钉SDK
+if (typeof window !== 'undefined') {
+  try {
+    dd = require('dingtalk-jsapi')
+  }
+  catch (e) {
+    console.error('Failed to load dingtalk-jsapi:', e)
+  }
+}
+// extend : support ding_talk login
 const NormalForm = () => {
   const { t } = useTranslation()
   const router = useRouter()
@@ -33,11 +49,79 @@ const NormalForm = () => {
 
   const isInviteLink = Boolean(invite_token && invite_token !== 'null')
 
+  // extend: Start Ding Talk Auto Login Logic
+  const dingTalkLogin = async (allFeatures: SystemFeatures) => {
+    // 确保只在客户端环境执行
+    if (typeof window === 'undefined' || !dd)
+      return
+
+    let consoleToken: string | null | undefined = decodeURIComponent(searchParams.get('console_token') || '')
+    const consoleTokenFromLocalStorage = localStorage?.getItem('console_token')
+    const jumpsNumber = Number(localStorage?.getItem('jumps_number'))
+    if (consoleToken || consoleTokenFromLocalStorage) {
+      if (!consoleToken)
+        consoleToken = consoleTokenFromLocalStorage
+      if (consoleToken) {
+        if (jumpsNumber) {
+          // token无效
+          localStorage.removeItem('console_token')
+          window.location.href = '/explore/apps-center-extend'
+          return
+        }
+        localStorage.setItem('console_token', consoleToken)
+        localStorage?.setItem('jumps_number', (jumpsNumber + 1).toString())
+        window.location.href = `/explore/apps-center-extend?console_token=${consoleToken}`
+        return
+      }
+      else {
+        window.location.href = '/explore/apps-center-extend'
+        return
+      }
+    }
+    const userAgent = navigator.userAgent.toLowerCase()
+    const host = API_PREFIX
+    const corpId = allFeatures.ding_talk_corp_id
+    if (userAgent.includes('dingtalk') && corpId && host) {
+      // Extend Start DingTalk login compatible
+      localStorage?.removeItem('redirect_url')
+      // Extend Stop DingTalk login compatible
+
+      try {
+        await dd.getAuthCode({
+          corpId,
+          // 获取临时授权ID
+          success: (res: { code: any }) => {
+            // 在这里可以将免登授权码发送给后台服务器进行验证和获取用户信息等操作
+            window.location.href = `${host}/ding-talk/login?code=${res.code}`
+          },
+          fail() {
+            if (dd.runtime && dd.runtime.permission) {
+              dd.runtime.permission.requestAuthCode({
+                corpId,
+                // 在这里我们移除了agentId参数，因为类型检查显示它不是有效的参数
+                onSuccess(result: { code: any }) {
+                  // 在这里可以将免登授权码发送给后台服务器进行验证和获取用户信息等操作
+                  window.location.href = `${host}/ding-talk/login?code=${result.code}`
+                },
+              })
+            }
+          },
+        })
+      }
+      catch (error) {
+        console.error('DingTalk auth error:', error)
+      }
+    }
+  }
+  // extend: Stop Ding Talk Auto Login Logic
+
   const init = useCallback(async () => {
     try {
       if (consoleToken && refreshToken) {
-        localStorage.setItem('console_token', consoleToken)
-        localStorage.setItem('refresh_token', refreshToken)
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('console_token', consoleToken)
+          localStorage.setItem('refresh_token', refreshToken)
+        }
         const redirectUrl = resolvePostLoginRedirect(searchParams)
         router.replace(redirectUrl || '/apps')
         return
@@ -52,6 +136,9 @@ const NormalForm = () => {
       setAllMethodsAreDisabled(!systemFeatures.enable_social_oauth_login && !systemFeatures.enable_email_code_login && !systemFeatures.enable_email_password_login && !systemFeatures.sso_enforced_for_signin)
       setShowORLine((systemFeatures.enable_social_oauth_login || systemFeatures.sso_enforced_for_signin) && (systemFeatures.enable_email_code_login || systemFeatures.enable_email_password_login))
       updateAuthType(systemFeatures.enable_email_password_login ? 'password' : 'code')
+      // 只在客户端执行钉钉登录
+      if (typeof window !== 'undefined')
+        await dingTalkLogin(systemFeatures)
       if (isInviteLink) {
         const checkRes = await invitationCheck({
           url: '/activate/check',
@@ -63,7 +150,6 @@ const NormalForm = () => {
       }
     }
     catch (error) {
-      console.error(error)
       setAllMethodsAreDisabled(true)
     }
     finally { setIsLoading(false) }
@@ -143,6 +229,12 @@ const NormalForm = () => {
             {systemFeatures.sso_enforced_for_signin && <div className='w-full'>
               <SSOAuth protocol={systemFeatures.sso_enforced_for_signin_protocol} />
             </div>}
+            {/* Extend start: ding_talk login */}
+            {systemFeatures.ding_talk && (<DingTalkAuth clientId={systemFeatures.ding_talk_client_id}></DingTalkAuth>)}
+            { /* Extend stop: DingTalk login */ }
+            {/* Extend start: oauth2 login */}
+            {systemFeatures.is_custom_auth2 && (<OAuth2></OAuth2>)}
+            { /* Extend stop: oauth2 login */ }
           </div>
 
           {showORLine && <div className="relative mt-6">

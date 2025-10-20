@@ -77,6 +77,16 @@ export default function MailAndPasswordAuth({ isInvite, isEmailSetup, allowRegis
           localStorage.setItem('refresh_token', res.data.refresh_token)
           const redirectUrl = resolvePostLoginRedirect(searchParams)
           router.replace(redirectUrl || '/apps')
+          // Extend Begin  ----------------
+          // 如果本地浏览器缓存数据存在重定向url，则跳转到重定向url
+          if (localStorage.getItem('redirect_url')) {
+            const redirectUrl = localStorage.getItem('redirect_url')
+            localStorage.removeItem('redirect_url')
+            router.replace(redirectUrl as string)
+            return
+          }
+          router.replace('/explore/apps-center-extend')
+          // Extend End  ----------------
         }
       }
       else if (res.code === 'account_not_found') {

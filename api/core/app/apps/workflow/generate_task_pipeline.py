@@ -66,8 +66,9 @@ from core.workflow.system_variable import SystemVariable
 from core.workflow.workflow_cycle_manager import CycleManagerWorkflowInfo, WorkflowCycleManager
 from extensions.ext_database import db
 from models.account import Account
+from models.api_token_money_extend import ApiTokenMessageJoinsExtend  # 二开部分End - 密钥额度限制
 from models.enums import CreatorUserRole
-from models.model import EndUser
+from models.model import AppMode, EndUser  # 二开部分End - 密钥额度限制，新增AppMode
 from models.workflow import (
     Workflow,
     WorkflowAppLog,
@@ -128,6 +129,10 @@ class WorkflowAppGenerateTaskPipeline:
             workflow_execution_repository=workflow_execution_repository,
             workflow_node_execution_repository=workflow_node_execution_repository,
         )
+
+        # 将用户信息传递给工作流周期管理器
+        self._workflow_cycle_manager._user_id = self._user_id
+        self._workflow_cycle_manager._created_by_role = self._created_by_role
 
         self._workflow_response_converter = WorkflowResponseConverter(
             application_generate_entity=application_generate_entity,
@@ -289,6 +294,15 @@ class WorkflowAppGenerateTaskPipeline:
         """Handle workflow started events."""
         # init workflow run
         workflow_execution = self._workflow_cycle_manager.handle_workflow_run_start()
+
+        # ------------------- 二开部分Begin - 密钥额度限制 -------------------
+        app_token_id = self._application_generate_entity.extras.get("app_token_id")
+        if app_token_id:
+            ApiTokenMessageJoinsExtend(
+                app_token_id=app_token_id, record_id=workflow_execution.id_, app_mode=AppMode.WORKFLOW.value
+            ).add_app_token_record_id()
+        # ------------------- 二开部分End - 密钥额度限制 -------------------
+
         self._workflow_run_id = workflow_execution.id_
         start_resp = self._workflow_response_converter.workflow_start_to_stream_response(
             task_id=self._application_generate_entity.task_id,

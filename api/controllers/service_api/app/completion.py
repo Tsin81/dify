@@ -28,7 +28,7 @@ from core.helper.trace_id_helper import get_external_trace_id
 from core.model_runtime.errors.invoke import InvokeError
 from libs import helper
 from libs.helper import uuid_value
-from models.model import App, AppMode, EndUser
+from models.model import ApiToken, App, AppMode, EndUser  # 二开部分End - 密钥额度限制，新增ApiToken
 from services.app_generate_service import AppGenerateService
 from services.errors.app import IsDraftWorkflowError, WorkflowIdFormatError, WorkflowNotFoundError
 from services.errors.llm import InvokeRateLimitError
@@ -55,6 +55,7 @@ chat_parser = reqparse.RequestParser()
 chat_parser.add_argument("inputs", type=dict, required=True, location="json", help="Input parameters for chat")
 chat_parser.add_argument("query", type=str, required=True, location="json", help="The chat query")
 chat_parser.add_argument("files", type=list, required=False, location="json", help="List of file attachments")
+chat_parser.add_argument("files_extend", type=list, required=False, location="json", help="Extend list of file attachments")  # 二开部分：文件上传功能
 chat_parser.add_argument(
     "response_mode", type=str, choices=["blocking", "streaming"], location="json", help="Response mode"
 )
@@ -72,7 +73,6 @@ chat_parser.add_argument(
 )
 chat_parser.add_argument("workflow_id", type=str, required=False, location="json", help="Workflow ID for advanced chat")
 
-
 @service_api_ns.route("/completion-messages")
 class CompletionApi(Resource):
     @service_api_ns.expect(completion_parser)
@@ -88,7 +88,7 @@ class CompletionApi(Resource):
         }
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.JSON, required=True))
-    def post(self, app_model: App, end_user: EndUser):
+    def post(self, app_model: App, end_user: EndUser, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token
         """Create a completion for the given prompt.
 
         This endpoint generates a completion based on the provided inputs and query.
@@ -105,6 +105,10 @@ class CompletionApi(Resource):
         streaming = args["response_mode"] == "streaming"
 
         args["auto_generate_name"] = False
+
+        # ------------------- 二开部分Begin - 密钥额度限制 -------------------
+        args["api_token"] = api_token
+        # # ------------------- 二开部分End - 密钥额度限制 -------------------
 
         try:
             response = AppGenerateService.generate(
@@ -151,7 +155,7 @@ class CompletionStopApi(Resource):
         }
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.JSON, required=True))
-    def post(self, app_model: App, end_user: EndUser, task_id: str):
+    def post(self, app_model: App, end_user: EndUser, task_id: str, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token
         """Stop a running completion task."""
         if app_model.mode != "completion":
             raise AppUnavailableError()
@@ -177,7 +181,7 @@ class ChatApi(Resource):
         }
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.JSON, required=True))
-    def post(self, app_model: App, end_user: EndUser):
+    def post(self, app_model: App, end_user: EndUser, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token
         """Send a message in a chat conversation.
 
         This endpoint handles chat messages for chat, agent chat, and advanced chat applications.
@@ -194,6 +198,10 @@ class ChatApi(Resource):
             args["external_trace_id"] = external_trace_id
 
         streaming = args["response_mode"] == "streaming"
+
+        # ------------------- 二开部分Begin - 密钥额度限制 -------------------
+        args["api_token"] = api_token
+        # # ------------------- 二开部分End - 密钥额度限制 -------------------
 
         try:
             response = AppGenerateService.generate(

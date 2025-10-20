@@ -49,17 +49,21 @@ from . import admin, apikey, extension, feature, ping, setup, version
 from .app import (
     advanced_prompt_template,
     agent,
+    ai_draw_extnd,  # Extend: The backend implements direct proxy forwarding of the API
     annotation,
     app,
+    app_extend,  # 二开部分：新增同步应用到模版中心
     audio,
     completion,
     conversation,
     conversation_variables,
+    ding_talk_extend,  # Extend: DingTalk Related APIs
     generator,
     mcp_server,
     message,
     model_config,
     ops_trace,
+    passport_extend,  # 二开部分: 新增passport_extend(额度限制，应用web计费)
     site,
     statistic,
     workflow,
@@ -70,7 +74,16 @@ from .app import (
 )
 
 # Import auth controllers
-from .auth import activate, data_source_bearer_auth, data_source_oauth, forgot_password, login, oauth, oauth_server
+from .auth import (  # 二开部分: 新增用户（调用dify注册接口）
+    activate,
+    data_source_bearer_auth,
+    data_source_oauth,
+    forgot_password,
+    login,
+    oauth,
+    oauth_server,
+    register_extend,
+)
 
 # Import billing controllers
 from .billing import billing, compliance
@@ -170,8 +183,10 @@ api.add_resource(
 from .tag import tags
 
 # Import workspace controllers
+# 二开部分：新增account_extend
 from .workspace import (
     account,
+    account_extend,
     agent_providers,
     endpoint,
     load_balancing_config,

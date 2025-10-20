@@ -19,7 +19,7 @@ from fields.conversation_variable_fields import (
     build_conversation_variable_model,
 )
 from libs.helper import uuid_value
-from models.model import App, AppMode, EndUser
+from models.model import ApiToken, App, AppMode, EndUser  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
 from services.conversation_service import ConversationService
 
 # Define parsers for conversation APIs
@@ -82,7 +82,7 @@ class ConversationApi(Resource):
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.QUERY))
     @service_api_ns.marshal_with(build_conversation_infinite_scroll_pagination_model(service_api_ns))
-    def get(self, app_model: App, end_user: EndUser):
+    def get(self, app_model: App, end_user: EndUser, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """List all conversations for the current user.
 
         Supports pagination using last_id and limit parameters.
@@ -122,7 +122,7 @@ class ConversationDetailApi(Resource):
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.JSON))
     @service_api_ns.marshal_with(build_conversation_delete_model(service_api_ns), code=204)
-    def delete(self, app_model: App, end_user: EndUser, c_id):
+    def delete(self, app_model: App, end_user: EndUser, c_id, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """Delete a specific conversation."""
         app_mode = AppMode.value_of(app_model.mode)
         if app_mode not in {AppMode.CHAT, AppMode.AGENT_CHAT, AppMode.ADVANCED_CHAT}:
@@ -152,7 +152,7 @@ class ConversationRenameApi(Resource):
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.JSON))
     @service_api_ns.marshal_with(build_simple_conversation_model(service_api_ns))
-    def post(self, app_model: App, end_user: EndUser, c_id):
+    def post(self, app_model: App, end_user: EndUser, c_id, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """Rename a conversation or auto-generate a name."""
         app_mode = AppMode.value_of(app_model.mode)
         if app_mode not in {AppMode.CHAT, AppMode.AGENT_CHAT, AppMode.ADVANCED_CHAT}:

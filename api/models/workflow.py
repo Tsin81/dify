@@ -859,10 +859,51 @@ class WorkflowAppLog(Base):
 
     @property
     def created_by_end_user(self):
-        from models.model import EndUser
-
+        # Extend: start /apps/<uuid:app_id>/workflow-app-logs update end_user to account
+        from models.model_extend import EndUserAccountJoinsExtend
         created_by_role = CreatorUserRole(self.created_by_role)
-        return db.session.get(EndUser, self.created_by) if created_by_role == CreatorUserRole.END_USER else None
+        if created_by_role == CreatorUserRole.END_USER:
+            end_user = db.session.query(EndUserAccountJoinsExtend).filter(
+                EndUserAccountJoinsExtend.end_user_id == self.created_by).first()
+            # associated username
+            if end_user is not None and (
+                    end_user.account_id is None
+                    or (end_user.account_id is not None and len(end_user.account_id) == 0)
+            ):
+                return self.created_by
+            elif end_user is not None:
+                user: Account = db.session.query(Account).filter(Account.id == end_user.account_id).first()
+                if user:
+                    return {
+                        "id": user.id,
+                        "type": user.status,
+                        "is_anonymous": "true",
+                        "session_id": user.name,
+                    }
+            else:
+                from models.model import EndUser
+                end_user = db.session.query(EndUser).filter(EndUser.id == self.created_by).first()
+                if end_user is not None and end_user.external_user_id is not None and len(end_user.external_user_id) > 0:
+                    user: Account = db.session.query(Account).filter(Account.id == end_user.external_user_id).first()
+                    if user:
+                        return {
+                            "id": user.id,
+                            "type": user.status,
+                            "is_anonymous": "true",
+                            "session_id": user.name,
+                        }
+            return end_user
+        elif len(self.created_by) > 0:
+            user: Account = db.session.query(Account).filter(Account.id == self.created_by).first()
+            if user:
+                return {
+                        "id": user.id,
+                        "type": user.status,
+                        "is_anonymous": "true",
+                        "session_id": user.name,
+                    }
+        return None
+        # Extend: stop /apps/<uuid:app_id>/workflow-app-logs update end_user to account
 
     def to_dict(self):
         return {
@@ -876,7 +917,6 @@ class WorkflowAppLog(Base):
             "created_by": self.created_by,
             "created_at": self.created_at,
         }
-
 
 class ConversationVariable(Base):
     __tablename__ = "workflow_conversation_variables"

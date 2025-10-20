@@ -11,9 +11,9 @@ const categoryI18n = exploreI18n.category
 
 export type ICategoryProps = {
   className?: string
-  list: AppCategory[]
+  list: string[]
   value: string
-  onChange: (value: AppCategory | string) => void
+  onChange: (value: string) => void
   /**
    * default value for search param 'category' in en
    */

@@ -268,6 +268,7 @@ const ProviderDetail = ({
             <Button
               className={cn('my-3 w-full shrink-0')}
               onClick={() => setIsShowEditCustomCollectionModal(true)}
+            disabled={!isCurrentWorkspaceManager} // 二开部分 - 按钮当不是管理员权限，则不允许点击编辑
             >
               <Settings01 className='mr-1 h-4 w-4 text-text-tertiary' />
               <div className='system-sm-medium text-text-secondary'>{t('tools.createTool.editAction')}</div>

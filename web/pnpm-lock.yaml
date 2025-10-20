@@ -156,6 +156,9 @@ importers:
       decimal.js:
         specifier: ^10.4.3
         version: 10.6.0
+      dingtalk-jsapi:
+        specifier: ^3.2.0
+        version: 3.2.0
       dompurify:
         specifier: ^3.2.4
         version: 3.2.6
@@ -192,6 +195,9 @@ importers:
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
+      jschardet:
+        specifier: ^3.0.0
+        version: 3.1.4
       jsonschema:
         specifier: ^1.5.0
         version: 1.5.0
@@ -234,6 +240,9 @@ importers:
       next-themes:
         specifier: ^0.4.3
         version: 0.4.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      papaparse:
+        specifier: ^5.5.3
+        version: 5.5.3
       pinyin-pro:
         specifier: ^3.25.0
         version: 3.26.0
@@ -4731,6 +4740,9 @@ packages:
   diffie-hellman@5.0.3:
     resolution: {integrity: sha512-kqag/Nl+f3GwyK25fhUMYj81BUOrZ9IuJsjIcDE5icNM9FJHAVm3VcUDxdLPoQtTuUylWm6ZIknYJwwaPxsUzg==}
 
+  dingtalk-jsapi@3.2.0:
+    resolution: {integrity: sha512-PZhTM1T9ERdaOzjFbyokegVmf/vUVvlg0BKcMiP1bB0e3vBflroPpbW2SjrZEKuvFxFtuFDpvYpk2EhbbKH/6Q==}
+
   dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
 
@@ -6061,6 +6073,10 @@ packages:
     resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
     hasBin: true
 
+  jschardet@3.1.4:
+    resolution: {integrity: sha512-/kmVISmrwVwtyYU40iQUOp3SUPk2dhNCMsZBQX0R1/jZ8maaXJ/oZIzUOiyOqcgtLnETFKYChbJ5iDC/eWmFHg==}
+    engines: {node: '>=0.1.90'}
+
   jsdoc-type-pratt-parser@4.1.0:
     resolution: {integrity: sha512-Hicd6JK5Njt2QB6XYFS7ok9e37O8AYk3jTcppG4YVQnYjOemymvTcmc7OWsmq/Qqj5TdRFO5/x/tIPmBeRtGHg==}
     engines: {node: '>=12.0.0'}
@@ -7088,6 +7104,9 @@ packages:
   process@0.11.10:
     resolution: {integrity: sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==}
     engines: {node: '>= 0.6.0'}
+
+  promise-polyfill@7.1.2:
+    resolution: {integrity: sha512-FuEc12/eKqqoRYIGBrUptCBRhobL19PS2U31vMNTfyck1FxPyMfgsXyW4Mav85y/ZN1hop3hOwRlUDok23oYfQ==}
 
   prompts@2.4.2:
     resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
@@ -13306,6 +13325,10 @@ snapshots:
       miller-rabin: 4.0.1
       randombytes: 2.1.0
 
+  dingtalk-jsapi@3.2.0:
+    dependencies:
+      promise-polyfill: 7.1.2
+
   dlv@1.1.3: {}
 
   doctrine@2.1.0:
@@ -15154,6 +15177,8 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
+  jschardet@3.1.4: {}
+
   jsdoc-type-pratt-parser@4.1.0: {}
 
   jsesc@3.0.2: {}
@@ -16483,6 +16508,8 @@ snapshots:
   process-nextick-args@2.0.1: {}
 
   process@0.11.10: {}
+
+  promise-polyfill@7.1.2: {}
 
   prompts@2.4.2:
     dependencies:

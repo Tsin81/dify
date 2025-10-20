@@ -10,6 +10,8 @@ export PYTHONIOENCODING=${PYTHONIOENCODING:-utf-8}
 if [[ "${MIGRATION_ENABLED}" == "true" ]]; then
   echo "Running migrations"
   flask upgrade-db
+  echo "Running migrations(dify_plus extend)"
+  flask extend_db upgrade
   # Pure migration mode
   if [[ "${MODE}" == "migration" ]]; then
   echo "Migration completed, exiting normally"
@@ -29,11 +31,18 @@ if [[ "${MODE}" == "worker" ]]; then
   else
     CONCURRENCY_OPTION="-c ${CELERY_WORKER_AMOUNT:-1}"
   fi
-
+  ## 二开部分，额度计算移动到新的队列中
   exec celery -A app.celery worker -P ${CELERY_WORKER_CLASS:-gevent} $CONCURRENCY_OPTION \
     --max-tasks-per-child ${MAX_TASKS_PER_CHILD:-50} --loglevel ${LOG_LEVEL:-INFO} \
-    -Q ${CELERY_QUEUES:-dataset,mail,ops_trace,app_deletion,plugin,workflow_storage,conversation}
-
+    -Q ${CELERY_QUEUES:-mail,ops_trace,app_deletion,plugin,workflow_storage,conversation}
+  ## 二开部分，额度计算移动到新的队列中
+## 二开部分，额度计算
+elif [[ "${MODE}" == "worker-gaia" ]]; then
+  exec celery -A app.celery worker -P gevent -c 1 -Q extend_high,extend_low --loglevel INFO
+## 二开部分，单一运行的知识库，多容器执行会导致卡住问题
+elif [[ "${MODE}" == "worker-dataset" ]]; then
+  exec celery -A app.celery worker -P gevent -c 1 -Q dataset --prefetch-multiplier=1 --loglevel INFO
+## 二开部分，end
 elif [[ "${MODE}" == "beat" ]]; then
   exec celery -A app.celery beat --loglevel ${LOG_LEVEL:-INFO}
 else
@@ -44,7 +53,7 @@ else
       --bind "${DIFY_BIND_ADDRESS:-0.0.0.0}:${DIFY_PORT:-5001}" \
       --workers ${SERVER_WORKER_AMOUNT:-1} \
       --worker-class ${SERVER_WORKER_CLASS:-gevent} \
-      --worker-connections ${SERVER_WORKER_CONNECTIONS:-10} \
+      --worker-connections ${SERVER_WORKER_CONNECTIONS:-1000} \
       --timeout ${GUNICORN_TIMEOUT:-200} \
       app:app
   fi

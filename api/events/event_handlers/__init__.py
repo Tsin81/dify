@@ -6,6 +6,9 @@ from .create_site_record_when_app_created import handle as handle_create_site_re
 from .delete_tool_parameters_cache_when_sync_draft_workflow import (
     handle as handle_delete_tool_parameters_cache_when_sync_draft_workflow,
 )
+from .update_account_money_when_messaeg_created_extend import (
+    handle as handle_update_account_money_when_messaeg_created_extend,
+)  # 二开部分：新增限额判断
 from .update_app_dataset_join_when_app_model_config_updated import (
     handle as handle_update_app_dataset_join_when_app_model_config_updated,
 )
@@ -24,6 +27,7 @@ __all__ = [
     "handle_create_installed_app_when_app_created",
     "handle_create_site_record_when_app_created",
     "handle_delete_tool_parameters_cache_when_sync_draft_workflow",
+    "handle_update_account_money_when_messaeg_created_extend",
     "handle_update_app_dataset_join_when_app_model_config_updated",
     "handle_update_app_dataset_join_when_app_published_workflow_updated",
     "handle_update_provider_when_message_created",

@@ -15,6 +15,7 @@ from controllers.console.app.error import (
 )
 from controllers.console.explore.error import NotChatAppError, NotCompletionAppError
 from controllers.console.explore.wraps import InstalledAppResource
+from controllers.console.money_extend import money_limit
 from controllers.web.error import InvokeRateLimitError as InvokeRateLimitHttpError
 from core.app.apps.base_app_queue_manager import AppQueueManager
 from core.app.entities.app_invoke_entities import InvokeFrom
@@ -30,6 +31,9 @@ from libs.datetime_utils import naive_utc_now
 from libs.helper import uuid_value
 from models.model import AppMode
 from services.app_generate_service import AppGenerateService
+from services.app_generate_service_extend import (
+    AppGenerateServiceExtend,  # Extend: App Center - Recommended list sorted by usage frequency
+)
 from services.errors.llm import InvokeRateLimitError
 
 logger = logging.getLogger(__name__)
@@ -37,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 # define completion api for user
 class CompletionApi(InstalledAppResource):
+    @money_limit
     def post(self, installed_app):
         app_model = installed_app.app
         if app_model.mode != "completion":
@@ -57,6 +62,11 @@ class CompletionApi(InstalledAppResource):
         db.session.commit()
 
         try:
+            AppGenerateServiceExtend.calculate_cumulative_usage(
+                app_model=app_model,
+                args=args,
+            )  # Extend: App
+            # Center - Recommended list sorted by usage frequency
             response = AppGenerateService.generate(
                 app_model=app_model, user=current_user, args=args, invoke_from=InvokeFrom.EXPLORE, streaming=streaming
             )
@@ -96,6 +106,7 @@ class CompletionStopApi(InstalledAppResource):
 
 
 class ChatApi(InstalledAppResource):
+    @money_limit
     def post(self, installed_app):
         app_model = installed_app.app
         app_mode = AppMode.value_of(app_model.mode)
@@ -117,6 +128,11 @@ class ChatApi(InstalledAppResource):
         db.session.commit()
 
         try:
+            AppGenerateServiceExtend.calculate_cumulative_usage(
+                app_model=app_model,
+                args=args,
+            )  # Extend: App
+            # Center - Recommended list sorted by usage frequency
             response = AppGenerateService.generate(
                 app_model=app_model, user=current_user, args=args, invoke_from=InvokeFrom.EXPLORE, streaming=True
             )

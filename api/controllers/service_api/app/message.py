@@ -14,7 +14,7 @@ from fields.conversation_fields import build_message_file_model
 from fields.message_fields import build_agent_thought_model, build_feedback_model
 from fields.raws import FilesContainedField
 from libs.helper import TimestampField, uuid_value
-from models.model import App, AppMode, EndUser
+from models.model import ApiToken, App, AppMode, EndUser  # 二开部分End - 密钥额度限制，新增ApiToken
 from services.errors.message import (
     FirstMessageNotExistsError,
     MessageNotExistsError,
@@ -105,7 +105,7 @@ class MessageListApi(Resource):
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.QUERY))
     @service_api_ns.marshal_with(build_message_infinite_scroll_pagination_model(service_api_ns))
-    def get(self, app_model: App, end_user: EndUser):
+    def get(self, app_model: App, end_user: EndUser, api_token: ApiToken):  # 二开部分End - 密钥额度限制，api_token
         """List messages in a conversation.
 
         Retrieves messages with pagination support using first_id.
@@ -140,7 +140,7 @@ class MessageFeedbackApi(Resource):
         }
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.JSON, required=True))
-    def post(self, app_model: App, end_user: EndUser, message_id):
+    def post(self, app_model: App, end_user: EndUser, message_id, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """Submit feedback for a message.
 
         Allows users to rate messages as like/dislike and provide optional feedback content.
@@ -200,7 +200,7 @@ class MessageSuggestedApi(Resource):
         }
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.QUERY, required=True))
-    def get(self, app_model: App, end_user: EndUser, message_id):
+    def get(self, app_model: App, end_user: EndUser, message_id, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """Get suggested follow-up questions for a message.
 
         Returns AI-generated follow-up questions based on the message content.

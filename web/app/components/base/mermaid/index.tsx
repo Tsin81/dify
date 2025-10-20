@@ -11,6 +11,8 @@ import {
   svgToBase64,
   waitForDOMElement,
 } from './utils'
+import type { Property } from 'csstype' // Markdown embedded images support click-to-zoom, providing users with a better user experience
+import s from './modal.module.css' // Markdown embedded images support click-to-zoom, providing users with a better user experience
 import LoadingAnim from '@/app/components/base/chat/chat/loading-anim'
 import cn from '@/utils/classnames'
 import ImagePreview from '@/app/components/base/image-uploader/image-preview'
@@ -107,11 +109,13 @@ const initMermaid = () => {
   return isMermaidInitialized
 }
 
+// eslint-disable-next-line react/display-name
 const Flowchart = React.forwardRef((props: {
   PrimitiveCode: string
   theme?: 'light' | 'dark'
 }, ref) => {
   const { t } = useTranslation()
+  const [svgCode, setSvgCode] = useState(null) // Extend image
   const [svgString, setSvgString] = useState<string | null>(null)
   const [look, setLook] = useState<'classic' | 'handDrawn'>('classic')
   const [isInitialized, setIsInitialized] = useState(false)
@@ -122,6 +126,11 @@ const Flowchart = React.forwardRef((props: {
   const renderTimeoutRef = useRef<NodeJS.Timeout>()
   const [errMsg, setErrMsg] = useState('')
   const [imagePreviewUrl, setImagePreviewUrl] = useState('')
+  // Extend: Start Markdown embedded images support click-to-zoom, providing users with a better user experience
+  const [showModal, setShowModal] = useState(false)
+  const [imgStyle, setImgStyle] = useState({ width: '0px', height: '0px' })
+  const [imgBarStyle, setImgBarStyle] = useState({ width: '0px', height: '0px', overflowY: 'auto' as Property.OverflowY })
+  // Extend: Stop Markdown embedded images support click-to-zoom, providing users with a better user experience
 
   /**
    * Renders Mermaid chart
@@ -283,7 +292,20 @@ const Flowchart = React.forwardRef((props: {
         setSvgString(cleanedSvg)
       }
 
-      setIsLoading(false)
+      // Extend: start images update version
+      try {
+        if (typeof window !== 'undefined' && mermaidAPI) {
+          const svgGraph = await mermaidAPI.render('flowchart', PrimitiveCode)
+          const base64Svg: any = await svgToBase64(cleanUpSvgCode(svgGraph.svg))
+          setSvgCode(base64Svg)
+          setIsLoading(false)
+        }
+      }
+      catch (error) {
+        setIsLoading(false)
+        setErrMsg((error as Error).message)
+      }
+      // Extend: stop images update version
     }
     catch (error) {
       // Error handling
@@ -380,6 +402,34 @@ const Flowchart = React.forwardRef((props: {
     }
     return false
   }, [currentTheme, isInitialized, look])
+
+  // Extend: Start Markdown embedded images support click-to-zoom, providing users with a better user experience
+  const openImage = async () => {
+    if (!window)
+      return
+    const img = new Image()
+    let winWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth
+    let winHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
+    img.onload = () => {
+      setShowModal(true)
+      winWidth = winWidth * 0.9
+      winHeight = winHeight * 0.9
+      winWidth = winWidth > 1920 ? 1920 : winWidth
+      const multiple = winWidth / img.width
+      const imgHeight = img.height * multiple
+      if (imgHeight < winHeight)
+        winHeight = imgHeight
+      setImgBarStyle({ width: `${winWidth}px`, height: `${winHeight}px`, overflowY: 'auto' })
+      setImgStyle({ width: `${img.width * multiple}px`, height: `${imgHeight}px` })
+    }
+    if (svgCode)
+      img.src = svgCode
+  }
+  // clone
+  const closeImage = () => {
+    setShowModal(false)
+  }
+  // Extend: Stop Markdown embedded images support click-to-zoom, providing users with a better user experience
 
   // This is the main rendering effect.
   // It triggers whenever the code, theme, or style changes.
@@ -523,6 +573,12 @@ const Flowchart = React.forwardRef((props: {
           </label>
         </div>
       </div>
+      {
+        svgCode
+        && <div className="mermaid object-fit: cover h-auto w-full cursor-pointer" onClick={() => setImagePreviewUrl(svgCode)}>
+          {svgCode && <img onClick={openImage} src={svgCode} alt="mermaid_chart" />}
+        </div>
+      }
 
       <div ref={containerRef} style={{ position: 'absolute', visibility: 'hidden', height: 0, overflow: 'hidden' }} />
 
@@ -570,6 +626,23 @@ const Flowchart = React.forwardRef((props: {
       {imagePreviewUrl && (
         <ImagePreview title='mermaid_chart' url={imagePreviewUrl} onCancel={() => setImagePreviewUrl('')} />
       )}
+      {/* Extend: Start Markdown embedded images support click-to-zoom, providing users with a better user experience */}
+      {
+        (showModal && imgStyle && svgCode) && <div onClick={closeImage}>
+          <div className={cn(s.mask_body)}>
+            <div className={cn(s.mask_layer)}></div>
+            <div className={cn(s.mask_dialog)} style={imgBarStyle}>
+              <img
+                alt="result image preview"
+                src={svgCode}
+                style={imgStyle}
+                className={cn('h-full', 'w-full', 'object-contain', s.mask_layer)}
+              />
+            </div>
+          </div>
+        </div>
+      }
+      {/* Extend: Stop Markdown embedded images support click-to-zoom, providing users with a better user experience */}
     </div>
   )
 })

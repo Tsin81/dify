@@ -13,7 +13,7 @@ from controllers.common.errors import (
 from controllers.service_api import service_api_ns
 from controllers.service_api.wraps import FetchUserArg, WhereisUserArg, validate_app_token
 from fields.file_fields import build_file_model
-from models.model import App, EndUser
+from models.model import ApiToken, App, EndUser  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
 from services.file_service import FileService
 
 
@@ -32,7 +32,7 @@ class FileApi(Resource):
     )
     @validate_app_token(fetch_user_arg=FetchUserArg(fetch_from=WhereisUserArg.FORM))
     @service_api_ns.marshal_with(build_file_model(service_api_ns), code=HTTPStatus.CREATED)
-    def post(self, app_model: App, end_user: EndUser):
+    def post(self, app_model: App, end_user: EndUser, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """Upload a file for use in conversations.
 
         Accepts a single file upload via multipart/form-data.

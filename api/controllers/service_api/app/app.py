@@ -5,7 +5,7 @@ from controllers.service_api import service_api_ns
 from controllers.service_api.app.error import AppUnavailableError
 from controllers.service_api.wraps import validate_app_token
 from core.app.app_config.common.parameters_mapping import get_parameters_from_feature_dict
-from models.model import App, AppMode
+from models.model import ApiToken, App, AppMode  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
 from services.app_service import AppService
 
 
@@ -24,7 +24,7 @@ class AppParameterApi(Resource):
     )
     @validate_app_token
     @service_api_ns.marshal_with(build_parameters_model(service_api_ns))
-    def get(self, app_model: App):
+    def get(self, app_model: App, api_token: ApiToken):  # 二开部分End - 密钥额度限制，新增api_token,否则上传文件会报错
         """Retrieve app parameters.
 
         Returns the input form parameters and configuration for the application.

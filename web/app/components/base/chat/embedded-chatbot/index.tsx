@@ -3,6 +3,7 @@ import {
   useEffect,
 } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useRouter, useSearchParams } from 'next/navigation' // You must log in to access your account extend
 import {
   EmbeddedChatbotContext,
   useEmbeddedChatbotContext,
@@ -175,6 +176,22 @@ const EmbeddedChatbotWrapper = () => {
 }
 
 const EmbeddedChatbot = () => {
+  // ------------------------ start You must log in to access your account extend ------------------------
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const consoleToken = searchParams.get('console_token')
+  const consoleTokenFromLocalStorage = localStorage?.getItem('console_token')
+
+  if (!(consoleToken || consoleTokenFromLocalStorage)) {
+    if (typeof window !== 'undefined') {
+      if (window.location !== undefined)
+        localStorage?.setItem('redirect_url', window.location.href)
+      router.replace('/signin')
+    }
+    return null
+  }
+  // ------------------------ end You must log in to access your account extend ------------------------
+
   return <EmbeddedChatbotWrapper />
 }
 

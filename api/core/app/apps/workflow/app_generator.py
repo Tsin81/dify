@@ -3,7 +3,7 @@ import logging
 import threading
 import uuid
 from collections.abc import Generator, Mapping, Sequence
-from typing import Any, Literal, Optional, Union, overload
+from typing import Any, Literal, Optional, Union, cast, overload  # 二开部分 - 密钥额度限制，新增cast
 
 from flask import Flask, current_app
 from pydantic import ValidationError
@@ -34,7 +34,14 @@ from core.workflow.variable_loader import DUMMY_VARIABLE_LOADER, VariableLoader
 from extensions.ext_database import db
 from factories import file_factory
 from libs.flask_utils import preserve_flask_contexts
-from models import Account, App, EndUser, Workflow, WorkflowNodeExecutionTriggeredFrom
+from models import (  # 二开部分 - 密钥额度限制，新增ApiToken
+    Account,
+    ApiToken,
+    App,
+    EndUser,
+    Workflow,
+    WorkflowNodeExecutionTriggeredFrom,
+)
 from models.enums import WorkflowRunTriggeredFrom
 from services.workflow_draft_variable_service import DraftVarLoader, WorkflowDraftVariableService
 
@@ -130,6 +137,14 @@ class WorkflowAppGenerator(BaseAppGenerator):
             **extract_external_trace_id_from_args(args),
         }
         workflow_run_id = str(uuid.uuid4())
+        # ------------------- 二开部分Begin - 密钥额度限制 -------------------
+        extras = {}
+        api_token = args.get("api_token")
+        if api_token:
+            cast(ApiToken, api_token)
+            extras["app_token_id"] = api_token.id
+        # ------------------- 二开部分End - 密钥额度限制
+
         # init application generate entity
         application_generate_entity = WorkflowAppGenerateEntity(
             task_id=str(uuid.uuid4()),
@@ -148,7 +163,7 @@ class WorkflowAppGenerator(BaseAppGenerator):
             call_depth=call_depth,
             trace_manager=trace_manager,
             workflow_execution_id=workflow_run_id,
-            extras=extras,
+            extras=extras,  # 二开部分 - 密钥额度限制
         )
 
         contexts.plugin_tool_providers.set({})
